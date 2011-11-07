@@ -6,8 +6,6 @@
       "express": "2.4.7"
     , "ejs": ">= 0.4.3"
     , "twitter": ">= 0.1.17"
-    , "mongoose": ">= 2.3.10"
-    , "validator": ">= 0.3.4"
     , "socket.io": ">= 0.8.7"
   }
   , "directories": {
