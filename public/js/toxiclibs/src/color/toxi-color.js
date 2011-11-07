@@ -1,0 +1,1 @@
+toxi.color = toxi.color || {};
