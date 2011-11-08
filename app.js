@@ -3,15 +3,18 @@
  */
 var express = require('express'),
     mongoose = require('mongoose'),
-    socketIO = require('socket.io')
+    socketIO = require('socket.io'),
     TwitterSearchPoll = require('./lib/TwitterSearchPoll.js').TwitterSearchPoll;
 
 var app = module.exports = express.createServer(),
     io = socketIO.listen(app),
-    pollTwitter = new TwitterSearchPoll(
-      'OccupyWallSt',
-      (10*1000)
-    );
+    
+    /*
+    Prime number of seconds
+    See http://designfestival.com/the-cicada-principle-and-why-it-matters-to-web-designers/
+    */
+    twitterPositive = new TwitterSearchPoll('OccupyWallSt :)', (23*1000)),
+    twitterNegative = new TwitterSearchPoll('OccupyWallSt :(', (27*1000));
 
 // Configuration
 
@@ -37,26 +40,11 @@ app.configure('production', function(){
 
 // Models
 
-/*
-var TweetModel = new mongoose.Schema({
-  tweetID: Number,
-  created: Date,
-  fromUser: String,
-  fromUserID: Number,
-  toUserID: Number,
-  avatar: String,
-  lang: String,
-  text: String
-});
-
-mongoose.model('Tweet', TweetModel);
-mongoose.connect('mongodb://localhost/test');
-*/
-
 // Sockets
 
 io.sockets.on('connection', function (socket) {
-  pollTwitter.poll(function(error, search){
+  
+  twitterPositive.poll(function(error, search){
     if (error) {
       return;
     };
@@ -66,13 +54,34 @@ io.sockets.on('connection', function (socket) {
     for (var i = results.length - 1; i >= 0; i--) {
       tweets.push({
         id: results[i].id,
-        from_user: results[i].from_user
+        from_user: results[i].from_user,
+        positive: true
       });
     };
     socket.emit('tweets', {
       tweets: tweets
     });
   });
+  
+  twitterNegative.poll(function(error, search){
+    if (error) {
+      return;
+    };
+
+    var tweets = [],
+        results = search.results;
+    for (var i = results.length - 1; i >= 0; i--) {
+      tweets.push({
+        id: results[i].id,
+        from_user: results[i].from_user,
+        positive: false
+      });
+    };
+    socket.emit('tweets', {
+      tweets: tweets
+    });
+  });
+  
 });
 
 // Routes

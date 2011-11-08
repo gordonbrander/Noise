@@ -1,6 +1,6 @@
 var socket = io.connect('http://localhost');
-var phys = toxi.physics2d;
-var physics = new phys.VerletPhysics2D();
+var phys2D = toxi.physics2d;
+var physics = new phys2D.VerletPhysics2D();
 
 /* Create a function that contains all of our animation code.
 This function will have the Processing object passed into it by the regestration
@@ -10,7 +10,8 @@ var mySketch = function (P) {
   var BG = new P.PVector(30, 30, 30);
   var fillBackground = function() {
     P.background(BG.x, BG.y, BG.z);
-  }
+  };
+  
   /* Setup steps for your sketch. */
   P.setup = function () {
     fillBackground();
@@ -18,31 +19,31 @@ var mySketch = function (P) {
     P.size(WORLD_BOUNDS.x, WORLD_BOUNDS.y);
     /* Set animation background color */
     P.fill(255, 255, 255);
-    P.stroke(90, 90, 90);
+    P.noStroke();
     P.smooth();
     /* Your code goes in here. */
 
-    physics.setDrag(0.05);
+    physics.setDrag(0.01);
     physics.setWorldBounds(new toxi.Rect(
       0, 0,
       WORLD_BOUNDS.x,
       WORLD_BOUNDS.y
     ));
-    physics.addBehavior(
-      new phys.GravityBehavior(
-        new toxi.Vec2D(0, 0.15)
-      )
-    );
 
     socket.on('tweets', function (data) {
-      for (var i = data.args.tweets.length - 1; i >= 0; i--) {
+      var tweets = data.tweets;
+      for (var i = tweets.length - 1; i >= 0; i--) {
         var loc = toxi.Vec2D
           .randomVector()
-          .scale(5)
-          .addSelf(5, 0);
-        var particle = new phys.VerletParticle2D(loc);
+          .scale(10)
+          // Generate the particle at these coordinates (middle)
+          .addSelf((WORLD_BOUNDS.x / 2), (WORLD_BOUNDS.y / 2));
+        var particle = new phys2D.VerletParticle2D(loc);
+        
+        particle.positive = tweets[i].positive;
 
         physics.addParticle(particle);
+        physics.addBehavior(new phys2D.AttractionBehavior(particle, 20, -1.2, 0.01));
       };
     });
   };
@@ -50,18 +51,19 @@ var mySketch = function (P) {
   /* Draw function is called by the draw loop ~60 times per second. */
   P.draw = function () {
     fillBackground();
-    // for (var i = data.length - 1; i >= 0; i--) {
-    //   var datum = data[i];
-
-    //   var size = P.constrain((datum.text.length * 3), 0, 600);
-    //   var h = 50;
-    //   P.rect(0, ((h * i)+1), size, h);    
-    // };
-
     physics.update();
+
     for (var i = physics.particles.length - 1; i >= 0; i--) {
-      var p = physics.particles[i];
-      P.ellipse(p.x, p.y, 5, 5);
+      var particle = physics.particles[i];
+      
+      if (particle.positive) {
+        P.fill(204, 221, 89);
+      }
+      else {
+        P.fill(248, 141, 113); 
+      }
+      
+      P.ellipse(particle.x, particle.y, 10, 10);
     };
   };
 };
