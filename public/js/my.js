@@ -11,6 +11,8 @@ var mySketch = function (P) {
   var fillBackground = function() {
     P.background(BG.x, BG.y, BG.z);
   };
+  var particleCreateQueue = [];
+  var mousePos, mouseAttractor;
   
   /* Setup steps for your sketch. */
   P.setup = function () {
@@ -29,29 +31,50 @@ var mySketch = function (P) {
       WORLD_BOUNDS.x,
       WORLD_BOUNDS.y
     ));
-
+    
     socket.on('tweets', function (data) {
       var tweets = data.tweets;
       for (var i = tweets.length - 1; i >= 0; i--) {
-        var loc = toxi.Vec2D
-          .randomVector()
-          .scale(10)
-          // Generate the particle at these coordinates (middle)
-          .addSelf((WORLD_BOUNDS.x / 2), (WORLD_BOUNDS.y / 2));
-        var particle = new phys2D.VerletParticle2D(loc);
-        
-        particle.positive = tweets[i].positive;
-
-        physics.addParticle(particle);
-        physics.addBehavior(new phys2D.AttractionBehavior(particle, 20, -1.2, 0.01));
+        particleCreateQueue.push({
+          positive: tweets[i].positive
+        });
       };
     });
+  };
+  
+  P.mousePressed = function () {
+    mousePos = new toxi.Vec2D(P.mouseX, P.mouseY);
+    // create a new positive attraction force field around the mouse position (radius=250px)
+    mouseAttractor = new phys2D.AttractionBehavior(mousePos, 250, 0.9);
+    physics.addBehavior(mouseAttractor);
+  };
+  
+  P.mouseReleased = function () {
+    physics.removeBehavior(mouseAttractor);
   };
   
   /* Draw function is called by the draw loop ~60 times per second. */
   P.draw = function () {
     fillBackground();
+    
     physics.update();
+    
+    var thirdFrame = ((P.frameCount % 30) === 0);
+    if (thirdFrame && particleCreateQueue.length) {
+      var particleTpl = particleCreateQueue.pop();
+      
+      var loc = toxi.Vec2D
+        .randomVector()
+        .scale(10)
+        // Generate the particle at these coordinates (middle)
+        .addSelf((WORLD_BOUNDS.x / 2), (WORLD_BOUNDS.y / 2));
+      var newParticle = new phys2D.VerletParticle2D(loc);
+
+      newParticle.positive = particleTpl.positive;
+
+      physics.addParticle(newParticle);
+      physics.addBehavior(new phys2D.AttractionBehavior(newParticle, 20, -1.2, 0.01));
+    };
 
     for (var i = physics.particles.length - 1; i >= 0; i--) {
       var particle = physics.particles[i];
