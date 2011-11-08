@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 var express = require('express'),
-    mongoose = require('mongoose'),
     socketIO = require('socket.io'),
     TwitterSearchPoll = require('./lib/TwitterSearchPoll.js').TwitterSearchPoll;
 
