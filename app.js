@@ -13,8 +13,8 @@ var app = module.exports = express.createServer(),
     Prime number of seconds
     See http://designfestival.com/the-cicada-principle-and-why-it-matters-to-web-designers/
     */
-    twitterPositive = new TwitterSearchPoll('OccupyWallSt :)', (23*1000)),
-    twitterNegative = new TwitterSearchPoll('OccupyWallSt :(', (27*1000));
+    twitterPositive = new TwitterSearchPoll('OccupyWallSt OR #ows OR #Occupy :)', (13*1000)),
+    twitterNegative = new TwitterSearchPoll('OccupyWallSt OR #ows OR #Occupy :(', (17*1000));
 
 // Configuration
 
