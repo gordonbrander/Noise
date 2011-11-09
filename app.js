@@ -6,14 +6,7 @@ var express = require('express'),
     TwitterSearchPoll = require('./lib/TwitterSearchPoll.js').TwitterSearchPoll;
 
 var app = module.exports = express.createServer(),
-    io = socketIO.listen(app),
-    
-    /*
-    Prime number of seconds
-    See http://designfestival.com/the-cicada-principle-and-why-it-matters-to-web-designers/
-    */
-    twitterPositive = new TwitterSearchPoll('OccupyWallSt OR #ows OR #Occupy :)', (13*1000)),
-    twitterNegative = new TwitterSearchPoll('OccupyWallSt OR #ows OR #Occupy :(', (17*1000));
+    io = socketIO.listen(app);
 
 // Configuration
 
@@ -37,13 +30,21 @@ app.configure('production', function(){
   app.use(express.errorHandler()); 
 });
 
-// Models
-
 // Sockets
 
+var twitterPoll = new TwitterSearchPoll(
+  'OccupyWallSt OR #ows OR #Occupy since:2011-09-17',
+  (15*1000), // 15 seconds
+  {
+    /* 100 tweets per page */
+    rpp: 100,
+    /* Start with oldest page.
+    Twitter enforces limit of 1500 results */
+    page: (1500/100)
+  }
+);
 io.sockets.on('connection', function (socket) {
-  
-  twitterPositive.poll(function(error, search){
+  var callback = function(error, search){
     if (error) {
       return;
     };
@@ -54,33 +55,24 @@ io.sockets.on('connection', function (socket) {
       tweets.push({
         id: results[i].id,
         from_user: results[i].from_user,
-        positive: true
+        text: results[i].text
       });
-    };
-    socket.emit('tweets', {
-      tweets: tweets
-    });
-  });
-  
-  twitterNegative.poll(function(error, search){
-    if (error) {
-      return;
     };
 
-    var tweets = [],
-        results = search.results;
-    for (var i = results.length - 1; i >= 0; i--) {
-      tweets.push({
-        id: results[i].id,
-        from_user: results[i].from_user,
-        positive: false
-      });
+    /* Get most recent tweet and set since_id.
+    since_id ensures we only get tweets that happened
+    after the ID of the tweet set. */
+    var latestTweet = results.shift();
+    if (latestTweet) {
+      this.opts.since_id = latestTweet.id;
     };
+
     socket.emit('tweets', {
       tweets: tweets
     });
-  });
+  };
   
+  twitterPoll.poll(callback);
 });
 
 // Routes

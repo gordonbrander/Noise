@@ -7,16 +7,13 @@ This function will have the Processing object passed into it by the regestration
 function (see below). */
 var mySketch = function (P) {
   var WORLD_BOUNDS = new P.PVector(800, 600);
-  var BG = new P.PVector(30, 30, 30);
-  var fillBackground = function() {
-    P.background(BG.x, BG.y, BG.z);
-  };
+  var BG = P.color(30, 30, 30);
   var particleCreateQueue = [];
   var mousePos, mouseAttractor;
   
   /* Setup steps for your sketch. */
   P.setup = function () {
-    fillBackground();
+    P.background(BG);
     /* Set animation size */
     P.size(WORLD_BOUNDS.x, WORLD_BOUNDS.y);
     /* Set animation background color */
@@ -35,9 +32,7 @@ var mySketch = function (P) {
     socket.on('tweets', function (data) {
       var tweets = data.tweets;
       for (var i = tweets.length - 1; i >= 0; i--) {
-        particleCreateQueue.push({
-          positive: tweets[i].positive
-        });
+        particleCreateQueue.push(tweets[i]);
       };
     });
   };
@@ -55,36 +50,40 @@ var mySketch = function (P) {
   
   /* Draw function is called by the draw loop ~60 times per second. */
   P.draw = function () {
-    fillBackground();
+    P.background(BG);
     
     physics.update();
     
-    var thirdFrame = ((P.frameCount % 30) === 0);
-    if (thirdFrame && particleCreateQueue.length) {
-      var particleTpl = particleCreateQueue.pop();
+    /* Create particles from queued results every
+    half second. */
+    var halfSecond = ((P.frameCount % 30) === 0);
+    if (halfSecond && particleCreateQueue.length) {
+      var particleData = particleCreateQueue.pop();
       
       var loc = toxi.Vec2D
         .randomVector()
         .scale(10)
         // Generate the particle at these coordinates (middle)
         .addSelf((WORLD_BOUNDS.x / 2), (WORLD_BOUNDS.y / 2));
+      
       var newParticle = new phys2D.VerletParticle2D(loc);
 
-      newParticle.positive = particleTpl.positive;
+      newParticle.data = particleData;
 
       physics.addParticle(newParticle);
       physics.addBehavior(new phys2D.AttractionBehavior(newParticle, 20, -1.2, 0.01));
     };
 
     for (var i = physics.particles.length - 1; i >= 0; i--) {
-      var particle = physics.particles[i];
+      var particle = physics.particles[i],
+          text = particle.data.text;
       
-      if (particle.positive) {
+      if (text.indexOf('#ows') !== -1) {
         P.fill(204, 221, 89);
       }
       else {
         P.fill(248, 141, 113); 
-      }
+      };
       
       P.ellipse(particle.x, particle.y, 10, 10);
     };
