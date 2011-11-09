@@ -37,15 +37,14 @@ var mySketch = function (P) {
     });
   };
   
-  P.mousePressed = function () {
+  P.mouseMoved = function () {
+	// Remove previous attractor
+	physics.removeBehavior(mouseAttractor);
+
     mousePos = new toxi.Vec2D(P.mouseX, P.mouseY);
     // create a new positive attraction force field around the mouse position (radius=250px)
-    mouseAttractor = new phys2D.AttractionBehavior(mousePos, 250, 0.9);
+    mouseAttractor = new phys2D.AttractionBehavior(mousePos, 250, 0.1);
     physics.addBehavior(mouseAttractor);
-  };
-  
-  P.mouseReleased = function () {
-    physics.removeBehavior(mouseAttractor);
   };
   
   /* Draw function is called by the draw loop ~60 times per second. */
