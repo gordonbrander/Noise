@@ -33,7 +33,7 @@ app.configure('production', function(){
 // Sockets
 
 var twitterPoll = new TwitterSearchPoll(
-  'OccupyWallSt OR #ows OR #Occupy since:2011-09-17',
+  '#occupywallst OR #ows OR #occupy',
   (15*1000), // 15 seconds
   {
     /* 100 tweets per page */
