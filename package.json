@@ -3,7 +3,7 @@
   , "version": "0.0.1"
   , "private": true
   , "dependencies": {
-      "express": "2.4.7"
+      "express": "2.5.0"
     , "ejs": ">= 0.4.3"
     , "twitter": ">= 0.1.17"
     , "socket.io": ">= 0.8.7"
