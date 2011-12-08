@@ -30,59 +30,67 @@ app.configure('production', function(){
   app.use(express.errorHandler()); 
 });
 
-// Sockets
+// Routes
 
-var twitterPoll = new TwitterSearchPoll(
-  '#occupywallst OR #ows OR #occupy',
-  (15*1000), // 15 seconds
-  {
-    /* 100 tweets per page */
-    rpp: 100,
-    /* Start with oldest page.
-    Twitter enforces limit of 1500 results */
-    page: (1500/100)
-  }
-);
-io.sockets.on('connection', function (socket) {
-  var callback = function(error, search){
-    if (error) {
-      return;
-    };
+app.get('/:hashtag?', function(req, res){
+  
+  io.sockets.on('connection', function (socket) {
+    var callback = function(error, search){
+      if (error) {
+        return;
+      };
 
-    var tweets = [],
-        results = search.results;
-    for (var i = results.length - 1; i >= 0; i--) {
-      tweets.push({
-        id: results[i].id,
-        from_user: results[i].from_user,
-        text: results[i].text
+      var tweets = [],
+          results = search.results;
+      for (var i = results.length - 1; i >= 0; i--) {
+        tweets.push({
+          id: results[i].id,
+          from_user: results[i].from_user,
+          text: results[i].text
+        });
+      };
+
+      /* Get most recent tweet and set since_id.
+      since_id ensures we only get tweets that happened
+      after the ID of the tweet set. */
+      var latestTweet = results.shift();
+      if (latestTweet) {
+        this.opts.since_id = latestTweet.id;
+      };
+
+      socket.emit('tweets', {
+        tweets: tweets
       });
     };
 
-    /* Get most recent tweet and set since_id.
-    since_id ensures we only get tweets that happened
-    after the ID of the tweet set. */
-    var latestTweet = results.shift();
-    if (latestTweet) {
-      this.opts.since_id = latestTweet.id;
-    };
-
-    socket.emit('tweets', {
-      tweets: tweets
-    });
-  };
+    twitterPoll.poll(callback);
+  });
   
-  twitterPoll.poll(callback);
-});
-
-// Routes
-
-app.get('/', function(req, res){
+  var query;
+  if (req.params.hashtag) {
+    query = req.params.hashtag;
+  }
+  else {
+    query = '#occupywallst OR #ows OR #occupy';
+  }
+  
+  var twitterPoll = new TwitterSearchPoll(
+    query,
+    (15*1000), // 15 seconds
+    {
+      /* 100 tweets per page */
+      rpp: 100,
+      /* Start with oldest page.
+      Twitter enforces limit of 1500 results */
+      page: (1500/100)
+    }
+  );
+  
   res.render('index', {
     title: "Express",
-    data: ""
+    hashtag: query
   });
 });
 
-app.listen(3000);
+app.listen(80);
 console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
